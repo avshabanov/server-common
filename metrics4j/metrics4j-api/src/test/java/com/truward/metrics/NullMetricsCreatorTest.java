@@ -16,22 +16,21 @@ public final class NullMetricsCreatorTest {
 
   @Before
   public void init() {
-    metricsCreator = NullMetricsCreator.getInstance();
+    metricsCreator = new NullMetricsCreator();
   }
 
   @Test
   public void shouldCreateNullMetrics() {
-    final Metrics metrics = metricsCreator.create();
-    metrics.put("0", true);
-    metrics.put("1", '1');
-    metrics.put("2", 1);
-    metrics.put("3", 1L);
-    metrics.put("4", 1.0f);
-    metrics.put("5", 1.0);
-    metrics.put("6", "1");
-    metrics.put("7", Arrays.asList(1, 2));
-    metrics.put("8", Collections.singletonMap("a", 1));
-    metrics.putCounter("counter1", 1);
-    metrics.write();
+    try (final Metrics metrics = metricsCreator.create()) {
+      metrics.put("0", true);
+      metrics.put("1", '1');
+      metrics.put("2", 1);
+      metrics.put("3", 1L);
+      metrics.put("4", 1.0f);
+      metrics.put("5", 1.0);
+      metrics.put("6", "1");
+      metrics.put("7", Arrays.asList(1, 2));
+      metrics.put("8", Collections.singletonMap("a", 1));
+    }
   }
 }
