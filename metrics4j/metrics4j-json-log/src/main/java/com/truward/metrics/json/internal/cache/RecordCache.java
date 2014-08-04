@@ -23,6 +23,7 @@ public interface RecordCache {
 
   /**
    * Tries to fetch a map instance from the object cache.
+   * Guarantees that the returned map will be empty.
    *
    * @return Retrieved map instance from the object cache or null if cache is empty/cleared.
    */

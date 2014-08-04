@@ -50,7 +50,7 @@ public class JsonLogMetricsCreator implements MetricsCreator, Closeable {
     // reuse properties from the records cache
     final Map<String, Object> cachedProperties = recordCache.fetch();
     if (cachedProperties != null) {
-      cachedProperties.clear();
+      assert cachedProperties.isEmpty();
       return new StandardMetrics(cachedProperties, mapDumper);
     }
 
