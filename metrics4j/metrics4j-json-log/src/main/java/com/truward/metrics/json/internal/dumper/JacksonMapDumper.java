@@ -1,8 +1,9 @@
-package com.truward.metrics.json.dumper;
+package com.truward.metrics.json.internal.dumper;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.truward.metrics.dumper.MapDumper;
+import com.truward.metrics.json.internal.cache.RecordCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,18 +17,21 @@ import java.util.Map;
 /**
  * Jackson-based map dumper.
  * UTF-8 encoding is used to write JSON values to the underlying output stream.
+ * <p>THIS CLASS IS NOT A PART OF THE PUBLIC API.</p>
  *
  * @author Alexander Shabanov
  */
 public class JacksonMapDumper implements MapDumper {
   private final OutputStream outputStream;
   private final JsonFactory factory = new JsonFactory();
+  private final RecordCache recordCache;
   private final Object lock = new Object();
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  public JacksonMapDumper(@Nonnull OutputStream outputStream) {
+  public JacksonMapDumper(@Nonnull OutputStream outputStream, @Nonnull RecordCache recordCache) {
     this.factory.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false); // do not automatically close output stream
     this.outputStream = outputStream;
+    this.recordCache = recordCache;
   }
 
   @Override
@@ -44,6 +48,8 @@ public class JacksonMapDumper implements MapDumper {
         log.error("Error while writing map={}", properties, e);
       }
     }
+
+    recordCache.take(properties);
   }
 
   @Override
