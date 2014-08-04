@@ -1,9 +1,9 @@
 package com.truward.metrics.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ContainerNode;
 import com.truward.metrics.Metrics;
 import com.truward.metrics.PredefinedMetricNames;
+import com.truward.metrics.json.reader.MetricsReader;
+import com.truward.metrics.json.util.ObjectMapperMetricsReader;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -11,9 +11,12 @@ import org.junit.Test;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -23,15 +26,14 @@ import static org.junit.Assert.assertNull;
  * @author Alexander Shabanov
  */
 @Ignore
-public final class ConcurrentJsonLogCreatorTest {
+public final class ConcurrentJsonLogCreatorIntegrationTest {
   private JsonLogMetricsCreator metricsCreator;
   private ThreadPoolExecutor executor;
   private File file;
-  private final ObjectMapper mapper = new ObjectMapper();
 
   @Before
   public void init() throws IOException {
-    file = File.createTempFile("metrics4j", "concurrentTest");
+    file = new File("/tmp/1.txt"); //File.createTempFile("metrics4j", "concurrentTest");
     metricsCreator = new JsonLogMetricsCreator(file);
     executor = new ThreadPoolExecutor(10, 100, 1L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(100));
   }
@@ -50,10 +52,12 @@ public final class ConcurrentJsonLogCreatorTest {
 
     // When:
     for (int i = 0; i < entryCount; ++i) {
+      final int id = i;
       tasks.add(executor.submit(new Callable<Void>() {
-        @Override public Void call() throws Exception {
+        @Override
+        public Void call() throws Exception {
           try (final Metrics metrics = metricsCreator.create()) {
-            metrics.put(PredefinedMetricNames.ORIGIN, "test");
+            metrics.put(PredefinedMetricNames.ORIGIN, Integer.toString(id));
             metrics.put(PredefinedMetricNames.START_TIME, System.currentTimeMillis());
             metrics.put(PredefinedMetricNames.TIME_DELTA, 10L);
             metrics.put(PredefinedMetricNames.SUCCEEDED, true);
@@ -64,16 +68,30 @@ public final class ConcurrentJsonLogCreatorTest {
       }));
     }
 
-    // Then:
     for (int i = 0; i < entryCount; ++i) {
-      assertNull(tasks.get(i).get());
+      assertNull(tasks.get(i).get()); // execute and wait for complete
     }
 
-    try (final InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
+    // Then:
+    final int[] ids = new int[entryCount];
+
+    // read entry ids
+    try (final MetricsReader reader = new ObjectMapperMetricsReader(new FileInputStream(file))) {
       for (int i = 0; i < entryCount; ++i) {
-        final ContainerNode containerNode = mapper.readValue(inputStream, ContainerNode.class);
-        assertNotNull(containerNode);
+        final Map<String, ?> entry = reader.readNext();
+        assertNotNull("Entry #" + i + " not found", entry);
+        assertEquals(4, entry.size());
+        final int id = Integer.parseInt(String.valueOf(entry.get(PredefinedMetricNames.ORIGIN)));
+        ids[i] = id;
       }
+
+      assertNull("There should be no more entries", reader.readNext());
+    }
+
+    // make sure all origins have been recorded and then read properly
+    Arrays.sort(ids);
+    for (int i = 0; i < entryCount; ++i) {
+      assertEquals(i, ids[i]);
     }
   }
 }

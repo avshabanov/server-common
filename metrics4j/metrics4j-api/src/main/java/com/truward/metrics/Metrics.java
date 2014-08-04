@@ -8,16 +8,16 @@ import java.util.Map;
 /**
  * Represents an entry in the metrics log.
  * Usually a metric is used to log time, spent to execute the particular operation.
- *
+ * <p/>
  * <p>The corresponding code might look as follows:</p>
  * <code>
  * try (final Metrics metrics = metricsCreator.create()) {
- *   metrics.put(ORIGIN, "OpenGLEngine.renderScene");
- *   final long startTime = System.currentTimeMillis();
- *   // execute operation...
- *   final long timeDelta = System.currentTimeMillis() - startTime;
- *   metrics.put(START_TIME, startTime);
- *   metrics.put(TIME_DELTA, timeDelta);
+ * metrics.put(ORIGIN, "OpenGLEngine.renderScene");
+ * final long startTime = System.currentTimeMillis();
+ * // execute operation...
+ * final long timeDelta = System.currentTimeMillis() - startTime;
+ * metrics.put(START_TIME, startTime);
+ * metrics.put(TIME_DELTA, timeDelta);
  * }
  * </code>
  *
@@ -46,7 +46,7 @@ public interface Metrics extends Closeable {
   /**
    * Closes and writes metrics instance to the corresponding metrics log.
    * Subsequent calls to any of the put operations will result in an error.
-   *
+   * <p/>
    * {@inheritDoc}
    */
   @Override

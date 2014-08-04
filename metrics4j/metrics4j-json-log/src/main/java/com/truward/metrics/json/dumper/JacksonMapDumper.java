@@ -14,28 +14,47 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * JSON map dumper. UTF-8 encoding is used to write JSON values to the underlying output stream.
+ * Jackson-based map dumper.
+ * UTF-8 encoding is used to write JSON values to the underlying output stream.
  *
  * @author Alexander Shabanov
  */
-public final class JsonMapDumper implements MapDumper {
+public class JacksonMapDumper implements MapDumper {
   private final OutputStream outputStream;
   private final JsonFactory factory = new JsonFactory();
   private final Object lock = new Object();
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  public JsonMapDumper(@Nonnull OutputStream outputStream) {
+  public JacksonMapDumper(@Nonnull OutputStream outputStream) {
+    this.factory.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false); // do not automatically close output stream
     this.outputStream = outputStream;
   }
 
-  @Override public void write(@Nonnull Map<String, Object> properties) {
-    try (final JsonGenerator generator = factory.createGenerator(outputStream)) {
-      synchronized (lock) {
-        writeValue(generator, properties);
+  @Override
+  public void write(@Nonnull Map<String, Object> properties) {
+    synchronized (lock) {
+      try {
+        // write json and close json generator
+        try (final JsonGenerator generator = factory.createGenerator(outputStream)) {
+          writeValue(generator, properties);
+        }
+        // write newline separator after written json entry, must be done after json generator is closed
+        outputStream.write('\n');
+      } catch (IOException e) {
+        log.error("Error while writing map={}", properties, e);
       }
-    } catch (IOException e) {
-      log.error("Error while writing map={}", properties, e);
     }
+  }
+
+  @Override
+  public void reportDuplicateEntry(@Nonnull Map<String, Object> source, @Nonnull String key) {
+    if (!log.isErrorEnabled()) {
+      return;
+    }
+
+    final Exception e = new Exception();
+    e.fillInStackTrace(); // add stacktrace, so this error will be easily recognizable in the logs
+    log.error("Duplicate entry with name={} in metrics={}", key, source, e);
   }
 
   private static void writeMap(@Nonnull JsonGenerator jg, @Nonnull Map<String, Object> map) throws IOException {

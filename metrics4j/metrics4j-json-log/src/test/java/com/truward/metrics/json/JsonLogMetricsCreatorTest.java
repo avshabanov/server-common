@@ -1,20 +1,22 @@
 package com.truward.metrics.json;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.truward.metrics.Metrics;
 import com.truward.metrics.PredefinedMetricNames;
+import com.truward.metrics.json.reader.MetricsReader;
+import com.truward.metrics.json.util.ObjectMapperMetricsReader;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -23,22 +25,35 @@ import static org.junit.Assert.assertEquals;
  * @author Alexander Shabanov
  */
 public final class JsonLogMetricsCreatorTest {
-  private ByteArrayOutputStream byteArrayOutputStream;
+  private ByteArrayOutputStream os;
   private JsonLogMetricsCreator metricsCreator;
-  private final ObjectMapper mapper = new ObjectMapper();
-  private final TypeReference<Map<String, Object>> mapTypeReference = new TypeReference<Map<String, Object>>() {};
 
   @Before
   public void init() {
-    byteArrayOutputStream = new ByteArrayOutputStream(1000);
-    metricsCreator = new JsonLogMetricsCreator(byteArrayOutputStream);
+    os = new ByteArrayOutputStream(1000);
+
+    // intentionally use buffered stream to check that each entry is flushed
+    metricsCreator = new JsonLogMetricsCreator(new BufferedOutputStream(os));
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void shouldDisallowWritingToClosedMetrics() throws IOException {
+    // Given
+    final Metrics metrics = metricsCreator.create();
+    metrics.put(PredefinedMetricNames.ORIGIN, "test");
+    metrics.close();
+
+    // When:
+    metrics.put(PredefinedMetricNames.START_TIME, 1L);
+
+    // Then: exception expected
   }
 
   @Test
   public void shouldDumpStandardValues() throws IOException {
     // Given:
     try (final Metrics metrics = metricsCreator.create()) {
-      metrics.put(PredefinedMetricNames.ORIGIN, "testOrigin");
+      metrics.put(PredefinedMetricNames.ORIGIN, "test");
       metrics.put(PredefinedMetricNames.START_TIME, 1000L);
       metrics.put(PredefinedMetricNames.TIME_DELTA, 250L);
       metrics.put(PredefinedMetricNames.SUCCEEDED, true);
@@ -48,28 +63,35 @@ public final class JsonLogMetricsCreatorTest {
     metricsCreator.close();
 
     // Then:
-    final Map<String, Object> map = mapper.readValue(byteArrayOutputStream.toByteArray(), mapTypeReference);
-    assertEquals(4, map.size());
-    assertEquals("testOrigin", map.get(PredefinedMetricNames.ORIGIN));
-    assertEquals(true, map.get(PredefinedMetricNames.SUCCEEDED));
-    assertEquals(1000, map.get(PredefinedMetricNames.START_TIME));
-    assertEquals(250, map.get(PredefinedMetricNames.TIME_DELTA));
+    try (final MetricsReader reader = newMetricsReader()) {
+      final Map<String, ?> map = reader.readNext();
+      assertNotNull("should read metrics entry", map);
+      assertEquals(4, map.size());
+      assertEquals("test", map.get(PredefinedMetricNames.ORIGIN));
+      assertEquals(true, map.get(PredefinedMetricNames.SUCCEEDED));
+      assertEquals(1000, map.get(PredefinedMetricNames.START_TIME));
+      assertEquals(250, map.get(PredefinedMetricNames.TIME_DELTA));
+
+      assertNull("there should be no more metrics entries", reader.readNext());
+    }
   }
 
   @Test
   public void shouldDumpNestedMap() throws IOException {
     // Given:
     try (final Metrics metrics = metricsCreator.create()) {
-      metrics.put("nested", Collections.singletonMap("val", 1L));
+      metrics.put("nested", singletonMap("val", 1L));
     }
 
     // When:
     metricsCreator.close();
 
     // Then:
-    final Map<String, Object> map = mapper.readValue(byteArrayOutputStream.toByteArray(), mapTypeReference);
-    assertEquals(1, map.size());
-    assertEquals(Collections.singletonMap("val", 1), map.get("nested"));
+    try (final MetricsReader reader = newMetricsReader()) {
+      final Map<String, ?> map = reader.readNext();
+      assertNotNull("should read metrics entry", map);
+      assertEquals(singletonMap("nested", singletonMap("val", 1)), map);
+    }
   }
 
   @Test
@@ -83,17 +105,19 @@ public final class JsonLogMetricsCreatorTest {
     metricsCreator.close();
 
     // Then:
-    final Map<String, Object> map = mapper.readValue(byteArrayOutputStream.toByteArray(), mapTypeReference);
-    assertEquals(1, map.size());
-    assertEquals(Collections.singletonList("val"), map.get("array"));
+    try (final MetricsReader reader = newMetricsReader()) {
+      final Map<String, ?> map = reader.readNext();
+      assertNotNull("should read metrics entry", map);
+      assertEquals(singletonMap("array", singletonList("val")), map);
+    }
   }
 
   @Test
-  @Ignore
   public void shouldDumpMultipleMetrics() throws IOException {
     // Given:
     try (final Metrics metrics = metricsCreator.create()) {
       metrics.put("val", "a");
+      metrics.put("id", 1L);
     }
     try (final Metrics metrics = metricsCreator.create()) {
       metrics.put("val", "b");
@@ -103,15 +127,45 @@ public final class JsonLogMetricsCreatorTest {
     metricsCreator.close();
 
     // Then:
-    final String s = new String(byteArrayOutputStream.toByteArray(), "UTF-8");
-    try (final InputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray())) {
-      final Map<String, Object> map1 = mapper.readValue(inputStream, mapTypeReference);
-      assertEquals(1, map1.size());
+    try (final MetricsReader reader = newMetricsReader()) {
+      final Map<String, ?> map1 = reader.readNext();
+      assertNotNull("map1 is null", map1);
+      assertEquals(2, map1.size());
+      assertEquals(1, map1.get("id"));
       assertEquals("a", map1.get("val"));
 
-      final Map<String, Object> map2 = mapper.readValue(inputStream, mapTypeReference);
-      assertEquals(1, map1.size());
-      assertEquals("b", map2.get("val"));
+      final Map<String, ?> map2 = reader.readNext();
+      assertNotNull("map2 is null", map2);
+      assertEquals(singletonMap("val", "b"), map2);
+
+      assertNull("there should be no more metrics", reader.readNext());
     }
+  }
+
+  @Test
+  public void shouldFlushEachRecord() throws IOException {
+    for (int i = 0; i < 10; ++i) {
+      // write metrics
+      try (final Metrics metrics = metricsCreator.create()) {
+        metrics.put("id", i);
+      }
+
+      // make sure newly introduced metric is in the stream without closing metrics creator
+      try (final MetricsReader reader = newMetricsReader()) {
+        for (int j = 0; j <= i; ++j) {
+          final Map<String, ?> metrics = reader.readNext();
+          assertNotNull(metrics);
+          assertEquals(j, metrics.get("id"));
+        }
+      }
+    }
+  }
+
+  //
+  // Private
+  //
+
+  private MetricsReader newMetricsReader() {
+    return new ObjectMapperMetricsReader(new ByteArrayInputStream(os.toByteArray()));
   }
 }
