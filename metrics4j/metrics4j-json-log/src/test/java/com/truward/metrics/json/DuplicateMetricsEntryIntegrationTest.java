@@ -2,8 +2,8 @@ package com.truward.metrics.json;
 
 import com.truward.metrics.Metrics;
 import com.truward.metrics.PredefinedMetricNames;
-import com.truward.metrics.json.reader.MetricsReader;
-import com.truward.metrics.json.util.ObjectMapperMetricsReader;
+import com.truward.metrics.reader.MetricsReader;
+import com.truward.metrics.json.reader.StandardJsonMetricsReader;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -59,7 +59,7 @@ public final class DuplicateMetricsEntryIntegrationTest {
     }
 
     // Then:
-    try (final MetricsReader metricsReader = new ObjectMapperMetricsReader(new ByteArrayInputStream(os.toByteArray()))) {
+    try (final MetricsReader metricsReader = new StandardJsonMetricsReader(new ByteArrayInputStream(os.toByteArray()))) {
       final Map<String, ?> metrics = metricsReader.readNext();
       assertNotNull("metrics", metrics);
       assertEquals(newOriginName, metrics.get(PredefinedMetricNames.ORIGIN));

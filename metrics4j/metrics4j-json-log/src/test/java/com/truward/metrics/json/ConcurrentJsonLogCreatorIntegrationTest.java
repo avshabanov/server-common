@@ -2,8 +2,8 @@ package com.truward.metrics.json;
 
 import com.truward.metrics.Metrics;
 import com.truward.metrics.PredefinedMetricNames;
-import com.truward.metrics.json.reader.MetricsReader;
-import com.truward.metrics.json.util.ObjectMapperMetricsReader;
+import com.truward.metrics.reader.MetricsReader;
+import com.truward.metrics.json.reader.StandardJsonMetricsReader;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -33,7 +33,7 @@ public final class ConcurrentJsonLogCreatorIntegrationTest {
 
   @Before
   public void init() throws IOException {
-    file = new File("/tmp/1.txt"); //File.createTempFile("metrics4j", "concurrentTest");
+    file = File.createTempFile("metrics4j", "concurrentTest");
     metricsCreator = new JsonLogMetricsCreator(file);
     executor = new ThreadPoolExecutor(10, 100, 1L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(100));
   }
@@ -76,7 +76,7 @@ public final class ConcurrentJsonLogCreatorIntegrationTest {
     final int[] ids = new int[entryCount];
 
     // read entry ids
-    try (final MetricsReader reader = new ObjectMapperMetricsReader(new FileInputStream(file))) {
+    try (final MetricsReader reader = new StandardJsonMetricsReader(new FileInputStream(file))) {
       for (int i = 0; i < entryCount; ++i) {
         final Map<String, ?> entry = reader.readNext();
         assertNotNull("Entry #" + i + " not found", entry);

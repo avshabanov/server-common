@@ -1,4 +1,4 @@
-package com.truward.metrics.json.reader;
+package com.truward.metrics.reader;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Represents an abstraction over metrics reader that can read metrics entries in a form of a map from
- * certain source.
+ * the certain source.
  *
  * @author Alexander Shabanov
  */

@@ -2,8 +2,8 @@ package com.truward.metrics.json;
 
 import com.truward.metrics.Metrics;
 import com.truward.metrics.PredefinedMetricNames;
-import com.truward.metrics.json.reader.MetricsReader;
-import com.truward.metrics.json.util.ObjectMapperMetricsReader;
+import com.truward.metrics.reader.MetricsReader;
+import com.truward.metrics.json.reader.StandardJsonMetricsReader;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -166,6 +166,6 @@ public final class JsonLogMetricsCreatorTest {
   //
 
   private MetricsReader newMetricsReader() {
-    return new ObjectMapperMetricsReader(new ByteArrayInputStream(os.toByteArray()));
+    return new StandardJsonMetricsReader(new ByteArrayInputStream(os.toByteArray()));
   }
 }

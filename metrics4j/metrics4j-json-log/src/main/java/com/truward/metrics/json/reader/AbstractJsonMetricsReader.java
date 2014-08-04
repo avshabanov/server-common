@@ -1,5 +1,7 @@
 package com.truward.metrics.json.reader;
 
+import com.truward.metrics.reader.MetricsReader;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -97,7 +99,7 @@ public abstract class AbstractJsonMetricsReader implements MetricsReader {
    * @throws IOException On I/O or JSON parsing error
    */
   @Nonnull
-  protected abstract Map<String, Object> parseJson(@Nonnull byte[] arr, int startPos, int len) throws IOException;
+  protected abstract Map<String, ?> parseJson(@Nonnull byte[] arr, int startPos, int len) throws IOException;
 
   /**
    * Closes current metrics reader with the associated input stream.
@@ -121,7 +123,7 @@ public abstract class AbstractJsonMetricsReader implements MetricsReader {
   //
 
   @Nullable
-  private Map<String, Object> readFromPos() throws IOException {
+  private Map<String, ?> readFromPos() throws IOException {
     assert buffer.length > 0;
     if (last < 0) {
       return null; // end of the buffer
@@ -166,7 +168,7 @@ public abstract class AbstractJsonMetricsReader implements MetricsReader {
   }
 
   @Nullable
-  private Map<String, Object> continueReadingFromStartPos(int startPos) throws IOException {
+  private Map<String, ?> continueReadingFromStartPos(int startPos) throws IOException {
     // if buffer is too small to fit current json entry, it needs to be reallocated
     if (startPos == 0 && last == buffer.length) {
       // if max buffer size exceeded, reset and give up
