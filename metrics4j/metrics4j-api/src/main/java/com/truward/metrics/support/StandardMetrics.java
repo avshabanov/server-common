@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class StandardMetrics implements Metrics {
   private MapDumper mapDumper;
-  protected Map<String, Object> properties;
+  private Map<String, Object> properties;
 
   public StandardMetrics(@Nonnull Map<String, Object> properties, @Nonnull MapDumper mapDumper) {
     this.properties = properties;
