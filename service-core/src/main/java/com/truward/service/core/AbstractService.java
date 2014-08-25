@@ -1,36 +1,47 @@
 package com.truward.service.core;
 
-import com.truward.service.core.exception.GenericServiceException;
+import com.truward.metrics.Metrics;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.util.Assert;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class AbstractService {
 
-  protected final Logger log = LoggerFactory.getLogger(getClass());
+  protected final Logger log;
 
-  protected AsyncTaskExecutor taskExecutor;
+  protected final ServiceSettings serviceSettings;
+
+  public AbstractService(@Nonnull ServiceSettings serviceSettings) {
+    Assert.notNull(serviceSettings, "serviceSettings can't be null");
+
+    this.serviceSettings = serviceSettings;
+    this.log = this.serviceSettings.getLogger(getClass());
+  }
 
   @Nonnull protected <T> Future<T> submit(@Nonnull Callable<T> callable) {
-    return taskExecutor.submit(callable);
+    return getTaskExecutor().submit(callable);
+  }
+
+  @Nonnull
+  protected AsyncTaskExecutor getTaskExecutor() {
+    return serviceSettings.getTaskExecutor();
   }
 
   protected <T> T get(@Nonnull Future<T> future) {
     try {
-      return future.get();
-    } catch (InterruptedException e) {
-      throw new GenericServiceException(e);
+      return future.get(serviceSettings.getFutureGetTimeoutMillis(), TimeUnit.MILLISECONDS);
+    } catch (InterruptedException | TimeoutException e) {
+      throw serviceSettings.dispatchThrowable(e);
     } catch (ExecutionException e) {
-      throw dispatchException(e);
+      throw serviceSettings.dispatchThrowable(e.getCause());
     }
   }
 
-  @Nonnull protected RuntimeException dispatchException(@Nonnull Exception cause) {
-    return new GenericServiceException(cause);
+  @Nonnull
+  protected Metrics getTopLevelMetrics() {
+    return serviceSettings.getServiceMetricsAware().getTopLevelMetrics();
   }
 }

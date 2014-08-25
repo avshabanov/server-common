@@ -1,6 +1,8 @@
 package com.truward.service.core.exception;
 
 /**
+ * Represents uncategorized service exception.
+ *
  * @author Alexander Shabanov
  */
 public final class GenericServiceException extends BaseServiceException {

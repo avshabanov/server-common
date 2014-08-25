@@ -17,6 +17,30 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+    </dependency>
+
+    <!-- Metrics -->
+    <dependency>
+      <groupId>com.truward.metrics</groupId>
+      <artifactId>metrics4j-api</artifactId>
+    </dependency>
+
+    <!-- AOP support -->
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjrt</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjweaver</artifactId>
+    </dependency>
 
     <!-- Spring -->
     <dependency>
@@ -26,8 +50,18 @@
 
     <!-- Tests -->
     <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.truward.metrics</groupId>
+      <artifactId>metrics4j-json-log</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
