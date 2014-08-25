@@ -1,53 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:aop="http://www.springframework.org/schema/aop"
-       xmlns:util="http://www.springframework.org/schema/util"
-       xsi:schemaLocation="
-       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
-       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-  <context:annotation-config/>
-
+  <!-- Test metrics creator -->
   <bean id="testMetricsStream" class="java.io.ByteArrayOutputStream"/>
-
   <bean id="metricsCreator" class="com.truward.metrics.json.JsonLogMetricsCreator">
     <constructor-arg ref="testMetricsStream"/>
   </bean>
-  <bean id="serviceMetricsSink" class="com.truward.service.core.metrics.sink.ServiceMetricsSink"/>
-  <util:constant id="timeService" static-field="com.truward.metrics.time.TimeService.DEFAULT"/>
-  <bean id="trackingIdAccessor" class="com.truward.service.core.tracking.ThreadLocalTrackingIdAccessor"/>
 
-
-  <!-- Metrics Logger Aspect -->
-  <bean id="metricsLoggerAspect" class="com.truward.service.core.metrics.aspect.MetricsLoggerAspect">
-    <constructor-arg ref="metricsCreator"/>
-    <constructor-arg ref="serviceMetricsSink"/>
-    <constructor-arg ref="timeService"/>
-    <constructor-arg ref="trackingIdAccessor"/>
-  </bean>
-  <aop:config proxy-target-class="false">
-    <aop:aspect ref="metricsLoggerAspect">
-
-      <aop:pointcut id="metricsPointcut" expression="@annotation(logMetrics)" />
-
-      <aop:around method="around" pointcut-ref="metricsPointcut" arg-names="joinPoint,logMetrics"/>
-    </aop:aspect>
-  </aop:config>
-
-  <!-- Task Executor -->
-  <bean id="serviceTaskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor"/>
-
-  <!-- Service Settings -->
-  <bean id="serviceSettings" class="com.truward.service.core.ServiceSettings">
-    <constructor-arg ref="serviceTaskExecutor"/>
-    <constructor-arg ref="serviceMetricsSink"/>
+  <!-- Test Task Executor -->
+  <bean id="serviceTaskExecutor" class="org.mockito.Mockito" factory-method="mock">
+    <constructor-arg value="org.springframework.core.task.AsyncTaskExecutor"/>
   </bean>
 
-  <!-- Service itself -->
+  <import resource="classpath:/com/truward/service/core/base-service-config.xml"/>
+
+  <!-- Test Calculator Service -->
   <bean id="calculatorService" class="com.truward.service.core.CalculatorServiceIntegrationTest$CalculatorServiceImpl">
     <constructor-arg ref="serviceSettings"/>
   </bean>
