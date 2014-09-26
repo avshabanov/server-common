@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+  <title>$Title</title>
+
+  <link rel="stylesheet" type="text/css" href="//static/css/style.css"/>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+  <script type="text/javascript" src="//static/js/ns.js"></script>
+</head>
+<body>
+
+<div id="header">
+    <ul class="hor-list logo">
+        <li>Demo</li>
+    </ul>
+    <ul class="hor-list user">
+        <!--<sec:authorize access="isAuthenticated()">-->
+            <!--<li>-->
+                <!--<spring:message code="label.loginGreeting" />&nbsp;-->
+                <!--<a href="<c:url value="/profile/view.html" />"><sec:authentication property="principal.username" /></a>!-->
+            <!--</li>-->
+            <!--<li><a href="<c:url value="/logout.do"/>"><spring:message code="label.logout" /></a></li>-->
+        <!--</sec:authorize>-->
+        <!--<sec:authorize access="!isAuthenticated()">-->
+            <!--<li><a href="<c:url value="/login.html"/>"><spring:message code="label.login" /></a></li>-->
+        <!--</sec:authorize>-->
+    </ul>
+</div>
+
+<div id="wrapper">
+    <h2>${sectionName}</h2>
+    <!--<jsp:doBody/>-->
+</div>
+</body>
+</html>
