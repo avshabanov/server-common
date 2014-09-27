@@ -1,4 +1,4 @@
-package com.truward.web.rabies.support;
+package com.truward.web.rabies.support.text;
 
 import com.truward.web.rabies.text.TextWriter;
 
@@ -7,11 +7,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author Alexander Shabanov
  */
-public class StreamTextWriter implements TextWriter {
+public class StreamTextWriter extends AbstractTextWriter {
   private OutputStreamWriter writer;
 
   public StreamTextWriter(@Nonnull OutputStream stream, @Nonnull Charset charset) {
@@ -34,15 +35,8 @@ public class StreamTextWriter implements TextWriter {
 
   @Nonnull
   @Override
-  public TextWriter append(int value) throws IOException {
-    writer.append(Integer.toString(value));
-    return this;
-  }
-
-  @Nonnull
-  @Override
-  public TextWriter append(long value) throws IOException {
-    writer.append(Long.toString(value));
+  public TextWriter append(byte[] utfBuffer, int offset, int length) throws IOException {
+    writer.append(new String(utfBuffer, offset, length, StandardCharsets.UTF_8));
     return this;
   }
 

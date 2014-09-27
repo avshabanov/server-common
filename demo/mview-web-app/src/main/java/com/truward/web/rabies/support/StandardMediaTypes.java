@@ -8,4 +8,6 @@ public final class StandardMediaTypes {
   }
 
   public static final String TEXT_HTML_UTF8 = "text/html; charset=utf-8";
+
+  public static final String TEXT_PLAIN_UTF8 = "text/plain; charset=utf-8";
 }

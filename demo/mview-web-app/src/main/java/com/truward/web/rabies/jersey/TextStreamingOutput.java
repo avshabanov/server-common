@@ -1,6 +1,6 @@
-package com.alexshabanov.mwa.web.util;
+package com.truward.web.rabies.jersey;
 
-import com.truward.web.rabies.support.Utf8TextWriter;
+import com.truward.web.rabies.support.text.Utf8TextWriter;
 import com.truward.web.rabies.text.Model;
 import com.truward.web.rabies.text.TextView;
 import com.truward.web.rabies.text.TextWriter;

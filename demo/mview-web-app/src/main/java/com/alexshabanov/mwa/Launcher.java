@@ -25,21 +25,12 @@ public final class Launcher {
     final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
     context.setContextPath("/");
 
-    // static servlet
-    if (args.length > 3) {
-      final ServletHolder defaultServletHolder = context.addServlet(DefaultServlet.class, "/static/*");
-      defaultServletHolder.setInitParameter("resourceBase", "src/main/webapp"); // <-- works!
-      //defaultServletHolder.setInitParameter("pathInfoOnly", "false"); - WTF???
-    } else {
-      final ServletHolder defaultServletHolder = context.addServlet(DefaultServlet.class, "/");
-      defaultServletHolder.setInitParameter("resourceBase", "src/main/webapp"); // <-- works!
-    }
-
     // guice
     context.addEventListener(new GuiceServletConfig());
     context.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
 
-
+    final ServletHolder defaultServletHolder = context.addServlet(DefaultServlet.class, "/");
+    defaultServletHolder.setInitParameter("resourceBase", "src/main/webapp"); // <-- serve static resources fromResourcePath this
 
     // set server handler
     server.setHandler(context);
