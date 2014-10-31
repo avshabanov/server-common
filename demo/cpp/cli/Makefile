@@ -1,31 +1,47 @@
 
-CXX_FLAGS					= -std=c++11 -Wall -pedantic -Itarget/gen
+CXX_FLAGS					= -std=c++11 -Wall -pedantic -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H -Itarget/gen
 CXX								= g++
-LFLAGS						= -lrocksdb -lprotobuf
+LFLAGS						= -lrocksdb -lthrift
 LINKER						= g++
 
-PROTOC						= protoc
+# Folder with object files
+TO								= target/obj
+
+# Folder with generated thrift classes
+TG								= target/gen/thrift/gen-cpp
+
+THRIFT						= thrift
 
 ## Rules
 
-.PHONY: clean dirs
+.PHONY: clean thrift-gen dirs
 
-target/mcli: target/obj/main.o target/obj/metrics.pb.o
-	$(LINKER) -o target/mcli target/obj/main.o target/obj/metrics.pb.o $(LFLAGS)
+target/mcli: $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o
+	$(LINKER) -o target/mcli $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o $(LFLAGS)
 
-target/obj/metrics.pb.o:
-	$(CXX) $(CXX_FLAGS) -c target/gen/metrics.pb.cc -o target/obj/metrics.pb.o
+# Thrift Generated Sources Compilation
 
-target/obj/main.o: dirs main.cc target/gen/metrics.pb.cc
-	$(CXX) $(CXX_FLAGS) -c main.cc -o target/obj/main.o
+$(TO)/metrics_constants.o: $(TG)/metrics_constants.cpp
+	$(CXX) $(CXX_FLAGS) -c $(TG)/metrics_constants.cpp -o $(TO)/metrics_constants.o
 
-target/gen/metrics.pb.cc: dirs proto/metrics.proto
-	$(PROTOC) -I=proto/ --cpp_out=target/gen/ proto/metrics.proto
+$(TO)/metrics_types.o: $(TG)/metrics_types.cpp
+	$(CXX) $(CXX_FLAGS) -c $(TG)/metrics_types.cpp -o $(TO)/metrics_types.o
+
+
+# Main Sources Compilation
+
+$(TO)/main.o: thrift-gen main.cc
+	$(CXX) $(CXX_FLAGS) -c main.cc -o $(TO)/main.o
+
+
+
+thrift-gen: dirs ../thrift/metrics.thrift
+	$(THRIFT) -o target/gen/thrift --gen cpp ../thrift/metrics.thrift
 
 # Object files (obj) and generated sources (gen)
 dirs:
 	mkdir -p target/obj
-	mkdir -p target/gen
+	mkdir -p target/gen/thrift
 
 clean:
 	rm -rf target

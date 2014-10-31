@@ -2,17 +2,34 @@
 // gcc -std=c++11 -Wall -fsyntax-only main.cc
 
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <cstring>
 
+#include <unistd.h>
+#include <fcntl.h>
+
 #include <rocksdb/db.h>
 
-#include "metrics.pb.h"
+#include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/protocol/TDenseProtocol.h>
+#include <thrift/protocol/TJSONProtocol.h>
+#include <thrift/transport/TTransportUtils.h>
+#include <thrift/transport/TFDTransport.h>
 
-using namespace std;
+// Thrift Generated Sources
+#include "thrift/gen-cpp/metrics_constants.h"
+#include "thrift/gen-cpp/metrics_types.h"
 
-int errm(const string& message) {
+using std::cerr;
+using std::cout;
+using std::endl;
+
+using namespace boost;
+using namespace apache::thrift;
+using namespace apache::thrift::protocol;
+using namespace apache::thrift::transport;
+
+int errm(const std::string& message) {
   cerr << message << endl;
   return -1;
 }
@@ -23,38 +40,54 @@ int usage(char * argv[]) {
 }
 
 int main(int argc, char * argv[]) {
-  // Verify that the version of the library that we linked against is
-  // compatible with the version of the headers we compiled against.
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
   if (argc != 3) {
     return usage(argv);
   }
 
-  metrics::Header header;
+  //metrics::Header header;
 
   if (strcmp(argv[1], "r") == 0) {
-    fstream input(argv[2], ios::in | ios::binary);
-    if (!header.ParseFromIstream(&input)) {
-      return errm("Failed to read from istream");
+    int fd = open(argv[2], O_RDONLY);
+    if (fd < 0) {
+      return errm("Failed to open a file");
     }
-    cout << "OK: read from istream succeeded, header.contentLength=" << header.contentlength() << ", header.contentType=" << header.contenttype()  << endl;
+
+    shared_ptr<TFDTransport> innerTransport(new TFDTransport(fd));
+    shared_ptr<TBufferedTransport> transport(new TBufferedTransport(innerTransport));
+
+    shared_ptr<TBinaryProtocol> protocol(new TBinaryProtocol(transport));
+
+    transport->open();
+
+    metrics::Header header;
+    header.read(protocol.get());
+
+    transport->close();
+
+    cout << "OK: read from file succeeded, header.contentLength=" << header.contentLength << ", header.contentType=" << header.contentType  << endl;
   } else if (strcmp(argv[1], "w") == 0) {
-    fstream output(argv[2], ios::out | ios::trunc | ios::binary);
-    
-    header.set_contentlength(123);
-    header.set_contenttype("test");
-
-    if (!header.SerializeToOstream(&output)) {
-      return errm("Failed to serialize to ostream");
+    int fd = open(argv[2], O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IXUSR);
+    if (fd < 0) {
+      return errm("Failed to open a file");
     }
+    shared_ptr<TFDTransport> innerTransport(new TFDTransport(fd));
+    shared_ptr<TBufferedTransport> transport(new TBufferedTransport(innerTransport));
 
-    cout << "OK: write to ostream succeeded" << endl;
+    shared_ptr<TBinaryProtocol> protocol(new TBinaryProtocol(transport));
+
+    metrics::Header header;
+    header.__set_contentLength(123);
+    header.__set_contentType("test");
+
+    header.write(protocol.get());
+
+    transport->close();
+
+    cout << "OK: write to file succeeded" << endl;
   } else {
     return usage(argv);
   }
 
-  google::protobuf::ShutdownProtobufLibrary();
   return 0;
 }
 
