@@ -16,8 +16,8 @@ THRIFT						= thrift
 
 .PHONY: clean thrift-gen dirs
 
-target/mcli: $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o
-	$(LINKER) -o target/mcli $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o $(LFLAGS)
+target/mcli: $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o $(TO)/settings_types.o $(TO)/settings_constants.o
+	$(LINKER) -o target/mcli $(TO)/*.o $(LFLAGS)
 
 # Thrift Generated Sources Compilation
 
@@ -27,6 +27,13 @@ $(TO)/metrics_constants.o: $(TG)/metrics_constants.cpp
 $(TO)/metrics_types.o: $(TG)/metrics_types.cpp
 	$(CXX) $(CXX_FLAGS) -c $(TG)/metrics_types.cpp -o $(TO)/metrics_types.o
 
+$(TO)/settings_constants.o: $(TG)/settings_constants.cpp
+	$(CXX) $(CXX_FLAGS) -c $(TG)/settings_constants.cpp -o $(TO)/settings_constants.o
+
+$(TO)/settings_types.o: $(TG)/settings_types.cpp
+	$(CXX) $(CXX_FLAGS) -c $(TG)/settings_types.cpp -o $(TO)/settings_types.o
+
+
 
 # Main Sources Compilation
 
@@ -34,9 +41,11 @@ $(TO)/main.o: thrift-gen main.cc
 	$(CXX) $(CXX_FLAGS) -c main.cc -o $(TO)/main.o
 
 
-
-thrift-gen: dirs ../thrift/metrics.thrift
+# Thrift Object Generation
+#
+thrift-gen: dirs ../thrift/metrics.thrift thrift/settings.thrift
 	$(THRIFT) -o target/gen/thrift --gen cpp ../thrift/metrics.thrift
+	$(THRIFT) -o target/gen/thrift --gen cpp thrift/settings.thrift
 
 # Object files (obj) and generated sources (gen)
 dirs:

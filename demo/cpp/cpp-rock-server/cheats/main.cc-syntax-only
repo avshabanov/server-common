@@ -1,0 +1,9 @@
+# !/bin/sh
+#
+# Checks syntax of main.cc, can be run after make all in current directory
+
+set -e
+
+g++ -fsyntax-only -std=c++11 -Wall -pedantic -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H -Itarget/gen -c main.cc
+echo "Check succeeded at `date`"
+

@@ -1,6 +1,4 @@
 
-// gcc -std=c++11 -Wall -fsyntax-only main.cc
-
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -11,8 +9,8 @@
 #include <rocksdb/db.h>
 
 #include <thrift/protocol/TBinaryProtocol.h>
-#include <thrift/protocol/TDenseProtocol.h>
-#include <thrift/protocol/TJSONProtocol.h>
+#include <thrift/protocol/TCompactProtocol.h>
+
 #include <thrift/transport/TTransportUtils.h>
 #include <thrift/transport/TFDTransport.h>
 
@@ -29,23 +27,91 @@ using namespace apache::thrift;
 using namespace apache::thrift::protocol;
 using namespace apache::thrift::transport;
 
-int errm(const std::string& message) {
-  cerr << message << endl;
-  return -1;
+
+//
+// Server code
+//
+
+#if 1
+
+static void initMetricsEntry(
+    metrics::MetricsEntry* value,
+    const std::string& origin, int64_t startTime, int64_t timeDelta) {
+  value->__set_origin(origin);
+  value->__set_startTime(startTime);
+  value->__set_timeDelta(timeDelta);
 }
 
-int usage(char * argv[]) {
-  cerr << "Usage: " << argv[0] << " w|r" << endl;
-  return -1;
+static std::string writeEntryToString() {
+  auto buffer = shared_ptr<TMemoryBuffer>(new TMemoryBuffer());
+//  auto protocol = shared_ptr<TProtocol>(new TBinaryProtocol(buffer));
+  auto protocol = shared_ptr<TProtocol>(new TCompactProtocol(buffer));
+
+  metrics::MetricsEntry value;
+
+  initMetricsEntry(&value, "test", 1000, 123);
+
+  value.write(protocol.get());
+
+  std::string str = buffer->getBufferAsString();
+
+  cout << "Serialized. Size = " << str.size() << endl;
+  return str;
 }
+
+static void readEntryFromString(const std::string& str) {
+  char * charBuf = const_cast<char *>(str.c_str());
+  auto buffer = shared_ptr<TMemoryBuffer>(new TMemoryBuffer((uint8_t *) charBuf, str.size()));
+  auto protocol = shared_ptr<TProtocol>(new TCompactProtocol(buffer));
+
+  metrics::MetricsEntry value;
+
+  value.read(protocol.get());
+
+  cout << "Restored, value: origin=" << value.origin << ", startTime=" << value.startTime << ", timeDelta=" << value.timeDelta << endl;
+}
+
+#endif
+
+
+//
+// Helper functions
+//
+
+static inline int usage(char * argv[], int code) {
+  cerr << "Usage: " << argv[0] << " w|r" << endl;
+  return code;
+}
+
+//
+// Entry point
+//
 
 int main(int argc, char * argv[]) {
-  if (argc != 3) {
-    return usage(argv);
+  if (argc < 5) {
+    std::string str = writeEntryToString();
+    readEntryFromString(str);
+    return 0;
   }
 
-  //metrics::Header header;
+  if (argc != 3) {
+    return usage(argv, 0);
+  }
 
+  try {
+  } catch (const std::exception& e) {
+    cerr << "Error: " << e.what() << endl;
+    return usage(argv, -1);
+  }
+
+  return 0;
+}
+
+#if 0
+
+static int old_main(int argc, char* argv[]) {
+  // old
+ 
   if (strcmp(argv[1], "r") == 0) {
     int fd = open(argv[2], O_RDONLY);
     if (fd < 0) {
@@ -87,7 +153,7 @@ int main(int argc, char * argv[]) {
   } else {
     return usage(argv);
   }
+} // /old_main
 
-  return 0;
-}
+#endif
 
