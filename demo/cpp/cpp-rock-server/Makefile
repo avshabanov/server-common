@@ -16,7 +16,7 @@ THRIFT						= thrift
 
 .PHONY: clean thrift-gen dirs
 
-target/mcli: $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o $(TO)/settings_types.o $(TO)/settings_constants.o
+target/mcli: $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o $(TO)/settings_types.o $(TO)/settings_constants.o $(TO)/settings_loader.o
 	$(LINKER) -o target/mcli $(TO)/*.o $(LFLAGS)
 
 # Thrift Generated Sources Compilation
@@ -33,12 +33,13 @@ $(TO)/settings_constants.o: $(TG)/settings_constants.cpp
 $(TO)/settings_types.o: $(TG)/settings_types.cpp
 	$(CXX) $(CXX_FLAGS) -c $(TG)/settings_types.cpp -o $(TO)/settings_types.o
 
-
-
 # Main Sources Compilation
 
-$(TO)/main.o: thrift-gen main.cc
+$(TO)/main.o: thrift-gen main.cc settings_loader.h
 	$(CXX) $(CXX_FLAGS) -c main.cc -o $(TO)/main.o
+
+$(TO)/settings_loader.o: thrift-gen settings_loader.cc settings_loader.h
+	$(CXX) $(CXX_FLAGS) -c settings_loader.cc -o $(TO)/settings_loader.o
 
 
 # Thrift Object Generation
