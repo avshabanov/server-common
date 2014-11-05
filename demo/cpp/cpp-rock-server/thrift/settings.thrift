@@ -12,6 +12,7 @@ struct Settings {
   1: required string dbPath
   2: required i32 portNumber
   3: required ProtocolType protocolType = ProtocolType.COMPACT
+  4: optional string serverLogPath
 }
 
 

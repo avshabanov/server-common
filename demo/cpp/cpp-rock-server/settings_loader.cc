@@ -1,8 +1,6 @@
 
 #include "settings_loader.h"
 
-#include <iostream>
-
 #include <thrift/protocol/TJSONProtocol.h>
 
 #include <thrift/transport/TTransportUtils.h>
@@ -11,24 +9,18 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-using std::cout;
-using std::endl;
-
 using namespace boost;
 using namespace apache::thrift;
 using namespace apache::thrift::protocol;
 using namespace apache::thrift::transport;
 
-static const char * FILE_NAME = "/tmp/settings.json";
 
-shared_ptr<rockserver::settings::Settings> loadSettings() {
+shared_ptr<rockserver::settings::Settings> loadSettings(const std::string& fileName) {
   shared_ptr<rockserver::settings::Settings> result(new rockserver::settings::Settings());
 
-  const char * fname = FILE_NAME;
-
-  int fd = open(fname, O_RDONLY);
+  int fd = open(fileName.c_str(), O_RDONLY);
   if (fd < 0) {
-    throw new std::logic_error(std::string("Unable to open file ") + fname);
+    throw new std::logic_error(std::string("Unable to open file ") + fileName);
   }
 
   shared_ptr<TTransport> transport(new TFDTransport(fd));
@@ -40,12 +32,10 @@ shared_ptr<rockserver::settings::Settings> loadSettings() {
 }
 
 
-void dumpSettings() {
-  const char * fname = FILE_NAME;
-
-  int fd = open(fname, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IXUSR);
+void dumpSettings(const std::string& fileName) {
+  int fd = open(fileName.c_str(), O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IXUSR);
   if (fd < 0) {
-    throw new std::logic_error(std::string("Unable to open file ") + fname);
+    throw new std::logic_error(std::string("Unable to open file ") + fileName);
   }
   shared_ptr<TTransport> transport(new TFDTransport(fd));
   shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));
@@ -57,6 +47,5 @@ void dumpSettings() {
   value.write(protocol.get());
 
   transport->close();
-  cout << "OK: dump to file=" << fname << " succeeded" << endl;
 }
 

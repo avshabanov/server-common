@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "settings_loader.h"
+#include "arg_parser.h"
 
 #include <rocksdb/db.h>
 
@@ -23,18 +24,59 @@ using namespace apache::thrift;
 using namespace apache::thrift::protocol;
 using namespace apache::thrift::transport;
 
+//
+// Constants
+//
+
+static const char * DEFAULT_SETTINGS_FILE_NAME = "settings.json";
 
 //
-// Server code
+// Helpers functions
 //
 
+static inline int usage(char * argv[], int code);
 
-//
-// Helper functions
-//
+static inline int parseArgs(int argc, char ** argv) {
+  ArgParser ap(argc, argv);
+
+  ap.next();
+  if (ap.isArg(std::vector<const char *>({ "--help", "-h", "--usage" }))) {
+    return usage(argv, 0);
+  }
+
+  const char * settingsFileName = DEFAULT_SETTINGS_FILE_NAME;
+
+  if (ap.isArg("-sf", "--settings-file")) {
+    settingsFileName = ap.next();
+    ap.next();
+  }
+
+  if (ap.isArg("-is")) {
+    dumpSettings(settingsFileName);
+    cout << "Default settings saved to file" << endl;
+    return 0;
+  }
+
+  if (ap.isArg("-ds")) {
+    auto settings = loadSettings(settingsFileName);
+    cout << "{ \"dbPath\": \"" << settings->dbPath << "\", \"portNumber\": " << settings->portNumber <<
+      ", \"protocolType\": \"" << rockserver::settings::_ProtocolType_VALUES_TO_NAMES.at(settings->protocolType) << '\"' <<
+      " }" << endl;
+    return 0;
+  }
+
+  throw new std::logic_error(std::string("Unknown command: ") + ap.arg());
+}
 
 static inline int usage(char * argv[], int code) {
-  cerr << "Usage: " << argv[0] << " <<TBD>>" << endl;
+  cout << "Usage: " << argv[0] << " ...arguments... Supported arguments:" << endl << 
+    "     [-h, --help, --usage] Prints this message and exits" << endl <<
+    "     [-is] Initializes source settings and exits" << endl << 
+    "     [-ds] Dumps settings and exits" << endl <<
+    "     [-sf, --settings-file] {PathToFile} Specifies path to settings file." << endl <<
+    "                            Must be specified prior to -is and -ds arguments to be taken into an account." << endl <<
+    "                            Default to " << DEFAULT_SETTINGS_FILE_NAME << endl <<
+    endl;
   return code;
 }
 
@@ -42,67 +84,12 @@ static inline int usage(char * argv[], int code) {
 // Entry point
 //
 
-int main(int argc, char * argv[]) {
-  if (argc < 5) {
-    dumpSettings();
-    auto settings = loadSettings();
-    cout << "dbPath=" << settings->dbPath << endl;
-    return 0;
-  }
-
-  if (argc != 3) {
-    return usage(argv, 0);
-  }
-
+int main(int argc, char ** argv) {
   try {
-  } catch (const std::exception& e) {
-    cerr << "Error: " << e.what() << endl;
+    return parseArgs(argc, argv);
+  } catch (std::exception * e) {
+    cerr << "Error: " << e->what() << endl;
     return usage(argv, -1);
   }
-
-  return 0;
 }
-
-
-#if 0
-
-static void initMetricsEntry(
-    metrics::MetricsEntry* value,
-    const std::string& origin, int64_t startTime, int64_t timeDelta) {
-  value->__set_origin(origin);
-  value->__set_startTime(startTime);
-  value->__set_timeDelta(timeDelta);
-}
-
-static std::string writeEntryToString() {
-  auto buffer = shared_ptr<TMemoryBuffer>(new TMemoryBuffer());
-//  auto protocol = shared_ptr<TProtocol>(new TBinaryProtocol(buffer));
-  auto protocol = shared_ptr<TProtocol>(new TCompactProtocol(buffer));
-
-  metrics::MetricsEntry value;
-
-  initMetricsEntry(&value, "test", 1000, 123);
-
-  value.write(protocol.get());
-
-  std::string str = buffer->getBufferAsString();
-
-  cout << "Serialized. Size = " << str.size() << endl;
-  return str;
-}
-
-static void readEntryFromString(const std::string& str) {
-  char * charBuf = const_cast<char *>(str.c_str());
-  auto buffer = shared_ptr<TMemoryBuffer>(new TMemoryBuffer((uint8_t *) charBuf, str.size()));
-  auto protocol = shared_ptr<TProtocol>(new TCompactProtocol(buffer));
-
-  metrics::MetricsEntry value;
-
-  value.read(protocol.get());
-
-  cout << "Restored, value: origin=" << value.origin << ", startTime=" << value.startTime << ", timeDelta=" << value.timeDelta << endl;
-}
-
-#endif
-
 

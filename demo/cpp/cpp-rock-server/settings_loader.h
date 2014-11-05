@@ -6,8 +6,8 @@
 
 #include <boost/shared_ptr.hpp>
 
-boost::shared_ptr<rockserver::settings::Settings> loadSettings();
+boost::shared_ptr<rockserver::settings::Settings> loadSettings(const std::string& fileName);
 
-void dumpSettings();
+void dumpSettings(const std::string& fileName);
 
 

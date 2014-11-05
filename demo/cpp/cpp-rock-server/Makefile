@@ -14,12 +14,14 @@ THRIFT						= thrift
 
 ## Rules
 
-.PHONY: clean thrift-gen dirs
+.PHONY: clean
 
-target/mcli: $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o $(TO)/settings_types.o $(TO)/settings_constants.o $(TO)/settings_loader.o
-	$(LINKER) -o target/mcli $(TO)/*.o $(LFLAGS)
+all: target/rockserver
 
-# Thrift Generated Sources Compilation
+target/rockserver: $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o $(TO)/settings_types.o $(TO)/settings_constants.o $(TO)/settings_loader.o $(TO)/server.o
+	$(LINKER) -o target/rockserver $(TO)/*.o $(LFLAGS)
+
+# Compiling Thrift Generated Sources
 
 $(TO)/metrics_constants.o: $(TG)/metrics_constants.cpp
 	$(CXX) $(CXX_FLAGS) -c $(TG)/metrics_constants.cpp -o $(TO)/metrics_constants.o
@@ -35,25 +37,31 @@ $(TO)/settings_types.o: $(TG)/settings_types.cpp
 
 # Main Sources Compilation
 
-$(TO)/main.o: thrift-gen main.cc settings_loader.h
+$(TO)/main.o: target/lastgen main.cc settings_loader.h arg_parser.h
 	$(CXX) $(CXX_FLAGS) -c main.cc -o $(TO)/main.o
 
-$(TO)/settings_loader.o: thrift-gen settings_loader.cc settings_loader.h
+$(TO)/settings_loader.o: target/lastgen settings_loader.cc settings_loader.h
 	$(CXX) $(CXX_FLAGS) -c settings_loader.cc -o $(TO)/settings_loader.o
+
+$(TO)/server.o: target/lastgen server.cc server.h
+	$(CXX) $(CXX_FLAGS) -c server.cc -o $(TO)/server.o
 
 
 # Thrift Object Generation
-#
-thrift-gen: dirs ../thrift/metrics.thrift thrift/settings.thrift
+
+target/lastgen: target/gen/thrift ../thrift/metrics.thrift thrift/settings.thrift
 	$(THRIFT) -o target/gen/thrift --gen cpp ../thrift/metrics.thrift
 	$(THRIFT) -o target/gen/thrift --gen cpp thrift/settings.thrift
+	touch target/lastgen
 
 # Object files (obj) and generated sources (gen)
-dirs:
-	mkdir -p target/obj
+
+target/gen/thrift: target/obj
 	mkdir -p target/gen/thrift
+
+target/obj:
+	mkdir -p target/obj
 
 clean:
 	rm -rf target
-
 
