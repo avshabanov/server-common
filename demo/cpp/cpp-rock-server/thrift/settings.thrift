@@ -5,7 +5,8 @@ enum ProtocolType {
   BINARY = 1,
   COMPACT = 2,
   DENSE = 3,
-  ZLIB = 4
+  ZLIB = 4,
+  JSON = 5
 }
 
 struct Settings {

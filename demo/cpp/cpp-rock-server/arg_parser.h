@@ -15,7 +15,7 @@ private:
 
   void ensureHaveArgs() {
     if (argv == argvEnd) {
-      throw std::logic_error("One more argument expected");
+      throw new std::logic_error("One more argument expected");
     }
   }
 

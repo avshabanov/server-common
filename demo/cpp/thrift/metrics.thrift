@@ -20,3 +20,30 @@ struct MetricsEntry {
 }
 
 
+/**
+ * Represents a replacement for offset-limit queries.
+ */
+struct MetricsEntryList {
+  1: required list<MetricsEntry> entries;
+  2: required string lastElementSeed;
+}
+
+exception InvalidQuery {
+  1: string fieldCode
+  2: string description
+}
+
+service MetricsService {
+
+  /**
+   * Asynchronously records metrics entry.
+   */
+  oneway void record(1:MetricsEntry entry);
+
+  /**
+   * Returns recorded entries, no more than limit per request.
+   */
+  MetricsEntryList getRecordedEntries(1:required i32 limit, 2:optional string lastElementSeed) throws (1:InvalidQuery invalidQuery);
+}
+
+

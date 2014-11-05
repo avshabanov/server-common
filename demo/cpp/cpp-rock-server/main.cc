@@ -5,6 +5,8 @@
 
 #include "settings_loader.h"
 #include "arg_parser.h"
+#include "server.h"
+#include "demo_client.h"
 
 #include <rocksdb/db.h>
 
@@ -36,6 +38,12 @@ static const char * DEFAULT_SETTINGS_FILE_NAME = "settings.json";
 
 static inline int usage(char * argv[], int code);
 
+static inline void printSettings(const boost::shared_ptr<rockserver::settings::Settings>& settings) {
+  cout << "{ \"dbPath\": \"" << settings->dbPath << "\", \"portNumber\": " << settings->portNumber <<
+    ", \"protocolType\": \"" << rockserver::settings::_ProtocolType_VALUES_TO_NAMES.at(settings->protocolType) << '\"' <<
+    " }" << endl;
+}
+
 static inline int parseArgs(int argc, char ** argv) {
   ArgParser ap(argc, argv);
 
@@ -58,10 +66,24 @@ static inline int parseArgs(int argc, char ** argv) {
   }
 
   if (ap.isArg("-ds")) {
+    printSettings(loadSettings(settingsFileName));
+    return 0;
+  }
+
+  if (ap.isArg("-s", "--start-server")) {
     auto settings = loadSettings(settingsFileName);
-    cout << "{ \"dbPath\": \"" << settings->dbPath << "\", \"portNumber\": " << settings->portNumber <<
-      ", \"protocolType\": \"" << rockserver::settings::_ProtocolType_VALUES_TO_NAMES.at(settings->protocolType) << '\"' <<
-      " }" << endl;
+    cout << "Starting server. Settings=";
+    printSettings(settings);
+    rockserver::Server server(settings);
+    server.run();
+    return 0;
+  }
+
+  if (ap.isArg("-c", "--demo-client")) {
+    auto settings = loadSettings(settingsFileName);
+    cout << "Starting demo client. Settings=";
+    printSettings(settings);
+    runDemoClient(settings, ap);
     return 0;
   }
 
