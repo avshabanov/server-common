@@ -110,6 +110,8 @@ int main(int argc, char ** argv) {
   try {
     return parseArgs(argc, argv);
   } catch (std::exception * e) {
+    // TODO: throwing and catching exceptions by pointer is never a good idea: who will clean up an allocated exception?
+    // TODO: change it to the reference (and make sure Thrift behaves in a good way in this sense).
     cerr << "Error: " << e->what() << endl;
     return usage(argv, -1);
   }

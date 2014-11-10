@@ -16,4 +16,3 @@ struct Settings {
   4: optional string serverLogPath
 }
 
-

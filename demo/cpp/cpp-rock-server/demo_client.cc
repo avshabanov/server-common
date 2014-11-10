@@ -84,6 +84,13 @@ void runDemoClient(const shared_ptr<Settings>& settings, ArgParser& ap) {
     MetricsEntry entry;
     entry.__set_origin("TestClient");
     client.record(entry);
+  } else if (ap.isArg("dumpAll")) {
+    MetricsEntryList ml;
+    client.getRecordedEntries(ml, 0, "");
+
+    for (auto it = ml.entries.begin(); it != ml.entries.end(); ++it) {
+      cout << "  Entry: metrics.origin=" << it->origin << endl;
+    }
   } else {
     cout << "Unknown arg=" << ap.arg() << ", exiting";
     return;

@@ -1,5 +1,6 @@
 
 #include "server.h"
+#include "metrics_service.h"
 
 #include <iostream>
 
@@ -55,21 +56,6 @@ static inline shared_ptr<TProtocolFactory> getProtocolFactory(const shared_ptr<S
 }
 
 /**
- * Internal metrics service handler.
- * TODO: put into separate file.
- */
-class MetricsServerHandler : public MetricsServiceIf {
-public:
-  void record(const MetricsEntry& entry) {
-    cout << "recording entry" << endl;
-  }
-
-  void getRecordedEntries(MetricsEntryList& _return, const int32_t limit, const std::string& lastElementSeed) {
-    cout << "print recorded entries" << endl;
-  }
-};
-
-/**
  * Hidden implementation.
  */
 class _ServerImpl {
@@ -82,10 +68,8 @@ public:
   }
 
   void run() {
-    int port = settings->portNumber;
-    shared_ptr<MetricsServerHandler> handler(new MetricsServerHandler());
-    shared_ptr<TProcessor> processor(new MetricsServiceProcessor(handler));
-    shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
+    shared_ptr<TProcessor> processor(new MetricsServiceProcessor(createMetricsServiceHandler(settings)));
+    shared_ptr<TServerTransport> serverTransport(new TServerSocket(settings->portNumber));
     shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
     shared_ptr<TProtocolFactory> protocolFactory = getProtocolFactory(settings);
   

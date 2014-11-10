@@ -18,7 +18,7 @@ THRIFT						= thrift
 
 all: target/rockserver
 
-target/rockserver: $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o $(TO)/settings_types.o $(TO)/settings_constants.o $(TO)/settings_loader.o $(TO)/server.o $(TO)/MetricsService.o $(TO)/demo_client.o
+target/rockserver: $(TO)/main.o $(TO)/metrics_constants.o $(TO)/metrics_types.o $(TO)/settings_types.o $(TO)/settings_constants.o $(TO)/settings_loader.o $(TO)/server.o $(TO)/MetricsService.o $(TO)/demo_client.o $(TO)/metrics_service.o
 	$(LINKER) -o target/rockserver $(TO)/*.o $(LFLAGS)
 
 # Compiling Thrift Generated Sources
@@ -46,8 +46,11 @@ $(TO)/main.o: target/lastgen main.cc settings_loader.h arg_parser.h demo_client.
 $(TO)/settings_loader.o: target/lastgen settings_loader.cc settings_loader.h
 	$(CXX) $(CXX_FLAGS) -c settings_loader.cc -o $(TO)/settings_loader.o
 
-$(TO)/server.o: target/lastgen server.cc server.h
+$(TO)/server.o: target/lastgen server.cc server.h metrics_service.h
 	$(CXX) $(CXX_FLAGS) -c server.cc -o $(TO)/server.o
+
+$(TO)/metrics_service.o: target/lastgen metrics_service.cc metrics_service.h
+	$(CXX) $(CXX_FLAGS) -c metrics_service.cc -o $(TO)/metrics_service.o
 
 $(TO)/demo_client.o: target/lastgen demo_client.cc demo_client.h arg_parser.h
 	$(CXX) $(CXX_FLAGS) -c demo_client.cc -o $(TO)/demo_client.o

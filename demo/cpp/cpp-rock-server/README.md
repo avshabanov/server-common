@@ -21,7 +21,17 @@ This will create file ``/tmp/settings.json``.
 
 ## Run Demo Client
 
+
+Record demo metrics
+
 ```
 ./target/rockserver -sf /tmp/settings.json -c record
 ```
+
+Dump all recorded metrics
+
+```
+./target/rockserver -sf /tmp/settings.json -c record
+```
+
 
